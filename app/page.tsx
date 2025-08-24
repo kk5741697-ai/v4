@@ -2,6 +2,8 @@ import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Maximize, Crop, FileImage, ArrowUpDown, Edit3, Zap, ImageIcon, Download, Palette, Upload, Archive } from "lucide-react"
+import Link from "next/link"
+
 
 const featuredTools = [
   {
