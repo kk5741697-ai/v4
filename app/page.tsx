@@ -1,21 +1,21 @@
 import { Header } from "@/components/header"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Maximize, Crop, FileImage, ArrowUpDown, Edit3, Zap, ImageIcon, Download, Palette, Upload } from "lucide-react"
+import { Maximize, Crop, FileImage, ArrowUpDown, Edit3, Zap, ImageIcon, Download, Palette, Upload, Archive } from "lucide-react"
 
 const featuredTools = [
   {
     title: "Compress IMAGE",
     description: "Compress JPG, PNG, SVG, and GIFs while saving space and maintaining quality.",
-    href: "/compress-image",
-    icon: ArrowUpDown,
+    href: "/image-compressor",
+    icon: Archive,
     iconBg: "bg-green-100",
     iconColor: "text-green-600",
   },
   {
     title: "Resize IMAGE",
     description: "Define your dimensions, by percent or pixel, and resize your JPG, PNG, SVG, and GIF images.",
-    href: "/resize-image",
+    href: "/image-resizer",
     icon: Maximize,
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",
@@ -23,7 +23,7 @@ const featuredTools = [
   {
     title: "Crop IMAGE",
     description: "Crop JPG, PNG, or GIFs with ease. Choose pixels to define your rectangle or use our visual editor.",
-    href: "/crop-image",
+    href: "/image-cropper",
     icon: Crop,
     iconBg: "bg-cyan-100",
     iconColor: "text-cyan-600",
@@ -31,7 +31,7 @@ const featuredTools = [
   {
     title: "Convert to JPG",
     description: "Turn PNG, GIF, TIF, PSD, SVG, WEBP, HEIC, or RAW format images to JPG in bulk with ease.",
-    href: "/convert-to-jpg",
+    href: "/image-converter",
     icon: FileImage,
     iconBg: "bg-yellow-100",
     iconColor: "text-yellow-600",
@@ -39,7 +39,7 @@ const featuredTools = [
   {
     title: "Convert from JPG",
     description: "Turn JPG images to PNG and GIF. Choose several JPGs to create an animated GIF in seconds!",
-    href: "/convert-from-jpg",
+    href: "/image-converter",
     icon: ArrowUpDown,
     iconBg: "bg-yellow-100",
     iconColor: "text-yellow-600",
@@ -48,7 +48,7 @@ const featuredTools = [
     title: "Photo editor",
     description:
       "Spice up your pictures with text, effects, frames or stickers. Simple editing tools for your image needs.",
-    href: "/photo-editor",
+    href: "/image-watermark",
     icon: Edit3,
     iconBg: "bg-purple-100",
     iconColor: "text-purple-600",
@@ -57,7 +57,7 @@ const featuredTools = [
     title: "Upscale Image",
     description:
       "Enlarge your images with high resolution. Easily increase the size of your JPG and PNG images while maintaining visual quality.",
-    href: "/upscale-image",
+    href: "/image-resizer",
     icon: Zap,
     iconBg: "bg-green-100",
     iconColor: "text-green-600",
@@ -67,7 +67,7 @@ const featuredTools = [
     title: "Remove background",
     description:
       "Quickly remove image backgrounds with high accuracy. Instantly detect objects and cut out backgrounds with ease.",
-    href: "/remove-background",
+    href: "/background-remover",
     icon: ImageIcon,
     iconBg: "bg-green-100",
     iconColor: "text-green-600",
@@ -76,7 +76,7 @@ const featuredTools = [
     title: "Watermark IMAGE",
     description:
       "Stamp an image or text over your images in seconds. Choose from typography, transparency and position.",
-    href: "/watermark-image",
+    href: "/image-watermark",
     icon: Download,
     iconBg: "bg-blue-100",
     iconColor: "text-blue-600",
@@ -85,7 +85,7 @@ const featuredTools = [
     title: "Meme generator",
     description:
       "Create your memes online with ease. Caption meme images or upload your pictures to make custom memes.",
-    href: "/meme-generator",
+    href: "/image-watermark",
     icon: Palette,
     iconBg: "bg-purple-100",
     iconColor: "text-purple-600",
@@ -135,9 +135,10 @@ export default function HomePage() {
             {featuredTools.map((tool) => {
               const Icon = tool.icon
               return (
-                <div
+                <Link
                   key={tool.title}
-                  className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group"
+                  href={tool.href}
+                  className="block bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg transition-all duration-200 cursor-pointer group"
                 >
                   {tool.isNew && <Badge className="mb-3 bg-blue-500 text-white text-xs">New!</Badge>}
                   <div className={`inline-flex p-3 rounded-lg ${tool.iconBg} mb-4`}>
@@ -145,7 +146,7 @@ export default function HomePage() {
                   </div>
                   <h3 className="font-heading font-semibold text-gray-900 mb-2 text-left">{tool.title}</h3>
                   <p className="text-sm text-gray-600 text-left leading-relaxed">{tool.description}</p>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -173,7 +174,7 @@ export default function HomePage() {
 
       <footer className="bg-white border-t border-gray-200 py-6 px-4">
         <div className="max-w-6xl mx-auto text-center">
-          <p className="text-sm text-gray-500">© iLoveTools 2025 ® - Your Image Editor</p>
+          <p className="text-sm text-gray-500">© PixoraTools 2025 ® - Your Online Tool Editor</p>
         </div>
       </footer>
     </div>

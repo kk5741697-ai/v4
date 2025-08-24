@@ -1,159 +1,154 @@
 "use client"
 
-import { ImageToolLayout } from "@/components/image-tool-layout"
+import { ToolLayout, ProcessedFile } from "@/components/tool-layout"
 import { Maximize } from "lucide-react"
+import { useState } from "react"
+import { ImageProcessor } from "@/lib/processors/image-processor"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 
-const resizeOptions = [
-  {
-    key: "width",
-    label: "Width (px)",
-    type: "number" as const,
-    defaultValue: 800,
-  },
-  {
-    key: "height",
-    label: "Height (px)",
-    type: "number" as const,
-    defaultValue: 600,
-  },
-  {
-    key: "maintainAspectRatio",
-    label: "Maintain Aspect Ratio",
-    type: "checkbox" as const,
-    defaultValue: true,
-  },
-  {
-    key: "resizeMode",
-    label: "Resize Mode",
-    type: "select" as const,
-    defaultValue: "fit",
-    selectOptions: [
-      { value: "fit", label: "Fit (maintain ratio)" },
-      { value: "fill", label: "Fill (crop if needed)" },
-      { value: "stretch", label: "Stretch (ignore ratio)" },
-    ],
-  },
-  {
-    key: "quality",
-    label: "Quality",
-    type: "slider" as const,
-    defaultValue: 90,
-    min: 10,
-    max: 100,
-    step: 5,
-  },
-  {
-    key: "outputFormat",
-    label: "Output Format",
-    type: "select" as const,
-    defaultValue: "jpeg",
-    selectOptions: [
-      { value: "jpeg", label: "JPEG" },
-      { value: "png", label: "PNG" },
-      { value: "webp", label: "WebP" },
-    ],
-  },
-]
-
-async function resizeImages(files: any[], options: any) {
-  return new Promise<{ success: boolean; processedFiles?: any[]; error?: string }>((resolve) => {
-    try {
-      const processedFiles = files.map(async (file) => {
-        return new Promise<any>((fileResolve) => {
-          const canvas = document.createElement("canvas")
-          const ctx = canvas.getContext("2d")
-          if (!ctx) {
-            fileResolve(file)
-            return
-          }
-
-          const img = new Image()
-          img.onload = () => {
-            let { width: targetWidth, height: targetHeight } = options
-            const { width: originalWidth, height: originalHeight } = file.dimensions
-
-            // Calculate dimensions based on resize mode
-            if (options.maintainAspectRatio && options.resizeMode === "fit") {
-              const aspectRatio = originalWidth / originalHeight
-              if (targetWidth / targetHeight > aspectRatio) {
-                targetWidth = targetHeight * aspectRatio
-              } else {
-                targetHeight = targetWidth / aspectRatio
-              }
-            }
-
-            canvas.width = targetWidth
-            canvas.height = targetHeight
-
-            // Apply resize mode
-            switch (options.resizeMode) {
-              case "fit":
-                ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
-                break
-              case "fill":
-                const scale = Math.max(targetWidth / originalWidth, targetHeight / originalHeight)
-                const scaledWidth = originalWidth * scale
-                const scaledHeight = originalHeight * scale
-                const offsetX = (targetWidth - scaledWidth) / 2
-                const offsetY = (targetHeight - scaledHeight) / 2
-                ctx.drawImage(img, offsetX, offsetY, scaledWidth, scaledHeight)
-                break
-              case "stretch":
-                ctx.drawImage(img, 0, 0, targetWidth, targetHeight)
-                break
-            }
-
-            const quality = options.quality / 100
-            const format = options.outputFormat === "jpg" ? "jpeg" : options.outputFormat
-            const mimeType = `image/${format}`
-
-            const processedDataUrl = canvas.toDataURL(mimeType, quality)
-
-            fileResolve({
-              ...file,
-              processed: true,
-              processedPreview: processedDataUrl,
-              dimensions: {
-                width: targetWidth,
-                height: targetHeight,
-              },
-            })
-          }
-
-          img.onerror = () => {
-            fileResolve(file)
-          }
-
-          img.src = file.preview
-        })
-      })
-
-      Promise.all(processedFiles).then((results) => {
-        resolve({
-          success: true,
-          processedFiles: results,
-        })
-      })
-    } catch (error) {
-      resolve({
-        success: false,
-        error: "Failed to process images",
-      })
-    }
-  })
-}
 
 export default function ImageResizerPage() {
+  const [files, setFiles] = useState<ProcessedFile[]>([])
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [width, setWidth] = useState(800)
+  const [height, setHeight] = useState(600)
+  const [maintainAspectRatio, setMaintainAspectRatio] = useState(true)
+  const [outputFormat, setOutputFormat] = useState<"jpeg" | "png" | "webp">("jpeg")
+  const [quality, setQuality] = useState(90)
+
+  const handleProcess = async (filesToProcess: ProcessedFile[]) => {
+    setIsProcessing(true)
+    
+    try {
+      const updatedFiles = await Promise.all(
+        filesToProcess.map(async (file) => {
+          try {
+            file.status = "processing"
+            file.progress = 0
+            setFiles(prev => prev.map(f => f.id === file.id ? { ...file } : f))
+
+            // Simulate progress
+            for (let i = 0; i <= 100; i += 25) {
+              file.progress = i
+              setFiles(prev => prev.map(f => f.id === file.id ? { ...file } : f))
+              await new Promise(resolve => setTimeout(resolve, 100))
+            }
+
+            const processedBlob = await ImageProcessor.resizeImage(file.originalFile, {
+              width,
+              height,
+              maintainAspectRatio,
+              outputFormat,
+              quality
+            })
+
+            const processedPreview = URL.createObjectURL(processedBlob)
+
+            return {
+              ...file,
+              status: "completed" as const,
+              progress: 100,
+              processedBlob,
+              processedPreview,
+              processedSize: processedBlob.size
+            }
+          } catch (error) {
+            return {
+              ...file,
+              status: "error" as const,
+              error: error instanceof Error ? error.message : "Processing failed"
+            }
+          }
+        })
+      )
+
+      setFiles(updatedFiles)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   return (
-    <ImageToolLayout
-      title="Image Resizer"
-      description="Resize images to specific dimensions while maintaining quality. Perfect for web optimization, social media, and print preparation."
+    <ToolLayout
+      title="Resize IMAGE"
+      description="Define your dimensions, by percent or pixel, and resize your JPG, PNG, SVG, and GIF images."
       icon={Maximize}
-      toolType="resize"
-      processFunction={resizeImages}
-      options={resizeOptions}
-      maxFiles={10}
-      allowBatchProcessing={true}
+      files={files}
+      onFilesChange={setFiles}
+      onProcess={handleProcess}
+      isProcessing={isProcessing}
+      acceptedTypes={["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"]}
+      maxFiles={20}
+      allowBulk={true}
+      processingOptions={
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="width">Width (px)</Label>
+              <Input
+                id="width"
+                type="number"
+                value={width}
+                onChange={(e) => setWidth(parseInt(e.target.value) || 0)}
+                min="1"
+                max="10000"
+              />
+            </div>
+            <div>
+              <Label htmlFor="height">Height (px)</Label>
+              <Input
+                id="height"
+                type="number"
+                value={height}
+                onChange={(e) => setHeight(parseInt(e.target.value) || 0)}
+                min="1"
+                max="10000"
+              />
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="maintain-aspect"
+              checked={maintainAspectRatio}
+              onCheckedChange={setMaintainAspectRatio}
+            />
+            <Label htmlFor="maintain-aspect" className="text-sm">
+              Maintain Aspect Ratio
+            </Label>
+          </div>
+          
+          <div>
+            <Label htmlFor="output-format">Output Format</Label>
+            <select
+              id="output-format"
+              value={outputFormat}
+              onChange={(e) => setOutputFormat(e.target.value as any)}
+              className="w-full p-2 border border-gray-300 rounded-md bg-white mt-1"
+            >
+              <option value="jpeg">JPEG</option>
+              <option value="png">PNG</option>
+              <option value="webp">WebP</option>
+            </select>
+          </div>
+          
+          <div>
+            <Label htmlFor="quality">Quality: {quality}%</Label>
+            <input
+              id="quality"
+              type="range"
+              min="10"
+              max="100"
+              step="5"
+              value={quality}
+              onChange={(e) => setQuality(parseInt(e.target.value))}
+              className="w-full mt-1"
+            />
+          </div>
+        </div>
+      }
     />
   )
 }
